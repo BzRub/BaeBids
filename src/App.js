@@ -1,8 +1,19 @@
+import Categorias from "./components/Categorias";
+import Footer from "./components/Footer";
+import Header from "./components/Header";
+import SobreNosotros from "./components/SobreNosotros";
+import Subastas from "./components/Subastas";
+
 function App() {
   return (
-    <div>
-      <h1 className="text-2xl">BaeBids</h1>
-    </div>
+    <>
+      <Header />
+      <main></main>
+      <Categorias />
+      <Subastas />
+      <SobreNosotros />
+      <Footer />
+    </>
   );
 }
 
