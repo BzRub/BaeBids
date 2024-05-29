@@ -4,6 +4,9 @@ import Header from "./components/Header";
 import SobreNosotros from "./components/SobreNosotros";
 import Subastas from "./components/Subastas";
 
+import './index.css';
+
+
 function App() {
   return (
     <>
