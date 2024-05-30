@@ -37,10 +37,10 @@ const Header = () => {
   const [buyNowPrice, setBuyNowPrice] = useState("");
   const [endDate, setEndDate] = useState("");
   const [category, setCategory] = useState("");
-  const [showProductForm, setShowProductForm] = useState(false);
   const [minDate] = useState(new Date()); // Define minDate as a state variable
   const [productImage, setProductImage] = useState(null);
-
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showProductModal, setShowProductModal] = useState(false);
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setUser(user);
@@ -250,218 +250,239 @@ const Header = () => {
   return (
     <div
       className={`bg-gradient-to-r from-[#106571] to-[#2AB7CA] flex justify-center items-center transition-all duration-1000 ${
-        user ? "h-auto p-12" : "h-screen"
+        user ? "h-auto p-1" : "h-screen"
       }`}
     >
       {user ? (
-        <div
-          className={`bg-blue-100 flex flex-col justify-center items-center transition-all duration-1000 ${
-            user ? "h-auto p-12" : "h-screen"
-          }`}
-        >
-          <div className="flex justify-between items-center mb-8">
-            <img src={logoImage} alt="BaeBids Logo" className="h-auto" />
-          </div>
-          <div className="flex items-center justify-end mb-4">
-            <img src={logoSaldo} alt="Saldo" className="w-6 h-6 mr-2" />
-            <span className="font-bold">{balance} Euros</span>
-          </div>
-          <div className="flex flex-col items-center mb-8">
-            <strong className="mb-4">Bienvenido {user.displayName}</strong>
-            <div className="mb-4">
-              <img
-                src={user.photoURL || perfilImage}
-                alt="Profile"
-                className="rounded-full w-24 h-24 mx-auto"
-              />
+        <>
+          <div className="flex justify-between items-center w-full px-4 py-2 bg-transparent">
+            <img src={logoImage} alt="BaeBids Logo" className="h-12" />
+            <div className="flex-1 flex justify-center space-x-4">
+              <button
+                onClick={() => setShowProductModal(true)}
+                className="bg-transparent text-white font-bold py-2 px-4 rounded-full focus:outline-none"
+              >
+                Subir producto
+              </button>
+              <button
+                className="bg-transparent text-white font-bold py-2 px-4 rounded-full focus:outline-none"
+              >
+                Productos subidos
+              </button>
+              <button
+                className="bg-transparent text-white font-bold py-2 px-4 rounded-full focus:outline-none"
+              >
+                Productos adquiridos
+              </button>
             </div>
-            <div className="flex items-center justify-center space-x-4">
-              {editMode ? (
-                <>
-                  <label htmlFor="upload-file" className="cursor-pointer">
-                    <div className="bg-blue-550 p-2 rounded-full">
-                      <img
-                        src={botonFotoPerfil}
-                        alt="Seleccionar y Subir Nueva Foto"
-                        className="w-8 h-8"
-                      />
+            <button
+              onClick={() => setShowProfileModal(true)}
+              className="bg-transparent text-white font-bold py-2 px-4 rounded-full focus:outline-none"
+            >
+              <img src={user.photoURL || perfilImage} alt="Profile" className="rounded-full w-12 h-12" />
+            </button>
+          </div>
+
+          {showProfileModal && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+              <div className="bg-gray-200 p-8 rounded-lg shadow-lg w-11/12 md:w-1/2 overflow-y-auto max-h-full">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-2xl font-semibold">Perfil de Usuario</h2>
+                  <button
+                    onClick={() => setShowProfileModal(false)}
+                    className="text-gray-600 hover:text-gray-800"
+                  >
+                    &times;
+                  </button>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="flex items-center justify-end mb-4">
+                    <img src={logoSaldo} alt="Saldo" className="w-6 h-6 mr-2" />
+                    <span className="font-bold">{balance} Euros</span>
+                  </div>
+                  <div className="flex flex-col items-center mb-8">
+                    <strong className="mb-4">Bienvenido {user.displayName}</strong>
+                    <div className="mb-4">
+                      <img src={user.photoURL || perfilImage} alt="Profile" className="rounded-full w-24 h-24 mx-auto" />
                     </div>
-                    <input
-                      type="file"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                      id="upload-file"
+                    <div className="flex items-center justify-center space-x-4">
+                      {editMode ? (
+                        <>
+                          <label htmlFor="upload-file" className="cursor-pointer">
+                            <div className="bg-blue-500 p-2 rounded-full">
+                              <img src={botonFotoPerfil} alt="Seleccionar y Subir Nueva Foto" className="w-8 h-8" />
+                            </div>
+                            <input
+                              type="file"
+                              onChange={handleImageUpload}
+                              className="hidden"
+                              id="upload-file"
+                            />
+                          </label>
+                          <input
+                            type="text"
+                            value={newUsername}
+                            onChange={(e) => setNewUsername(e.target.value)}
+                            className="block mx-auto mb-4 p-2 w-64 rounded border border-gray-300 placeholder-gray-500 text-gray-800"
+                            placeholder="Escriba otro nombre..."
+                          />
+                          <button
+                            onClick={handleSaveProfile}
+                            className="bg-blue-500 text-white px-4 py-2 rounded"
+                            disabled={!isValidUsername(newUsername) || isUsernameTaken(newUsername)}
+                          >
+                            Guardar
+                          </button>
+                          <button
+                            onClick={() => setEditMode(false)}
+                            className="bg-gray-500 text-white px-4 py-2 rounded"
+                          >
+                            Cancelar
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => setEditMode(true)}
+                          className="bg-blue-500 text-white px-4 py-2 rounded"
+                        >
+                          Editar Perfil
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-center space-x-4 mt-8">
+                    <button
+                      onClick={handleSignOut}
+                      className="bg-red-500 text-white px-6 py-2 rounded hover:bg-red-600"
+                    >
+                      Cerrar sesión
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showProductModal && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+              <div className="bg-gray-200 p-8 rounded-lg shadow-lg w-11/12 md:w-1/2 overflow-y-auto max-h-full">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-2xl font-semibold">Subir Producto</h2>
+                  <button
+                    onClick={() => setShowProductModal(false)}
+                    className="text-gray-600 hover:text-gray-800"
+                  >
+                    &times;
+                  </button>
+                </div>
+                <form
+                  onSubmit={handleProductSubmit}
+                  className="flex flex-col space-y-4"
+                >
+                  <input
+                    type="text"
+                    value={productName}
+                    onChange={(e) => setProductName(e.target.value)}
+                    className="p-2 border border-gray-300 rounded"
+                    placeholder="Nombre del producto"
+                    required
+                  />
+                  <textarea
+                    value={productDescription}
+                    onChange={(e) => setProductDescription(e.target.value)}
+                    className="p-2 border border-gray-300 rounded"
+                    placeholder="Descripción del producto"
+                    required
+                  />
+                  <input
+                    type="text"
+                    value={minBidPrice}
+                    onChange={(e) => {
+                      const input = e.target.value;
+                      if (/^\d*\.?\d*$/.test(input) && parseFloat(input) > 0) {
+                        setMinBidPrice(parseFloat(input));
+                      } else if (input === "" || input === "0") {
+                        setMinBidPrice(input);
+                      }
+                    }}
+                    className="p-2 border border-gray-300 rounded"
+                    placeholder="Precio mínimo de puja"
+                    required
+                  />
+                  <input
+                    type="number"
+                    value={buyNowPrice}
+                    onChange={(e) => setBuyNowPrice(Number(e.target.value))}
+                    className="p-2 border border-gray-300 rounded"
+                    placeholder="Precio de compra inmediata"
+                    required
+                  />
+                  {buyNowPrice <= minBidPrice && (
+                    <div className="text-red-500 text-sm">
+                      El precio de compra debe ser mayor
+                    </div>
+                  )}
+                  <input
+                    type="date"
+                    value={endDate}
+                    min={minDate.toISOString().split("T")[0]}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="p-2 border border-gray-300 rounded"
+                    placeholder="Fecha de finalización de la subasta"
+                    required
+                  />
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="p-2 border border-gray-300 rounded"
+                    required
+                  >
+                    <option value="">Selecciona una categoría</option>
+                    <option value="Consolas">Consolas</option>
+                    <option value="Ordenadores">Ordenadores</option>
+                    <option value="Moviles">Móviles</option>
+                    <option value="Camaras">Cámaras</option>
+                    <option value="Musica">Música</option>
+                    <option value="Relojes">Relojes</option>
+                  </select>
+                  <label
+                    htmlFor="upload-file"
+                    className="inline-flex items-center justify-center bg-gray-100 border border-gray-300 rounded-md p-2 cursor-pointer"
+                  >
+                    <img
+                      src={botonCamara}
+                      alt="Botón de Cámara"
+                      className="w-8 h-8"
                     />
                   </label>
                   <input
-                    type="text"
-                    value={newUsername}
-                    onChange={(e) => setNewUsername(e.target.value)}
-                    className="block mx-auto mb-4 p-2 w-64 rounded border border-gray-300 placeholder-gray-500 text-gray-800"
-                    placeholder="Escriba otro nombre..."
+                    type="file"
+                    id="upload-file"
+                    onChange={(e) => setProductImage(e.target.files[0])}
+                    className="hidden"
+                    required
                   />
-                  <button
-                    onClick={handleSaveProfile}
-                    className="bg-blue-500 text-white px-4 py-1 rounded"
-                    disabled={
-                      !isValidUsername(newUsername) ||
-                      isUsernameTaken(newUsername)
-                    }
-                    style={{
-                      cursor:
-                        !isValidUsername(newUsername) ||
-                        isUsernameTaken(newUsername)
-                          ? "not-allowed"
-                          : "pointer",
-                    }}
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={() => setEditMode(false)}
-                    className="bg-gray-500 text-white px-4 py-1 rounded"
-                  >
-                    Cancel
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={() => setEditMode(true)}
-                  className="bg-blue-500 text-white px-4 py-1 rounded"
-                >
-                  Editar Perfil
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center justify-center space-x-4 mt-8">
-            <button
-              onClick={() => setShowProductForm(true)}
-              className="bg-blue-500 text-white px-6 py-2 rounded"
-            >
-              Agregar Producto
-            </button>
-            <button
-              onClick={handleSignOut}
-              className="bg-red-500 text-white px-6 py-2 rounded hover:bg-red-600"
-            >
-              Cerrar sesión
-            </button>
-          </div>
-          {showProductForm && (
-            <div className="mt-8 p-4 border border-gray-300 rounded">
-              <form
-                onSubmit={handleProductSubmit}
-                className="flex flex-col space-y-4"
-              >
-                <input
-                  type="text"
-                  value={productName}
-                  onChange={(e) => setProductName(e.target.value)}
-                  className="p-2 border border-gray-300 rounded"
-                  placeholder="Nombre del producto"
-                  required
-                />
-                <textarea
-                  value={productDescription}
-                  onChange={(e) => setProductDescription(e.target.value)}
-                  className="p-2 border border-gray-300 rounded"
-                  placeholder="Descripción del producto"
-                  required
-                />
-                <input
-                  type="text"
-                  value={minBidPrice}
-                  onChange={(e) => {
-                    const input = e.target.value;
-                    // Validar si el input es un número mayor que 0
-                    if (/^\d*\.?\d*$/.test(input) && parseFloat(input) > 0) {
-                      // Si es válido, actualizar el estado con el nuevo valor convertido a number
-                      setMinBidPrice(parseFloat(input));
-                    } else if (input === "" || input === "0") {
-                      // Si el campo está vacío o tiene el valor "0", actualizar el estado con el valor actual
-                      setMinBidPrice(input);
-                    }
-                  }}
-                  className="p-2 border border-gray-300 rounded"
-                  placeholder="Precio mínimo de puja"
-                  required
-                />
-                <input
-                  type="number"
-                  value={buyNowPrice}
-                  onChange={(e) => setBuyNowPrice(Number(e.target.value))}
-                  className="p-2 border border-gray-300 rounded"
-                  placeholder="Precio de compra inmediata"
-                  required
-                />
-                {buyNowPrice <= minBidPrice && (
-                  <div className="text-red-500 text-sm">
-                    El precio de compra debe ser mayor
+                  <div className="flex justify-between items-center">
+                    <button
+                      type="submit"
+                      className="bg-green-500 text-white px-4 py-1 rounded"
+                      disabled={buyNowPrice <= minBidPrice}
+                    >
+                      Subir
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowProductModal(false)}
+                      className="bg-red-500 text-white px-4 py-1 rounded"
+                    >
+                      Cancelar
+                    </button>
                   </div>
-                )}
-                <input
-                  type="date"
-                  value={endDate}
-                  min={minDate.toISOString().split("T")[0]}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="p-2 border border-gray-300 rounded"
-                  placeholder="Fecha de finalización de la subasta"
-                  required
-                />
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="p-2 border border-gray-300 rounded"
-                  required
-                >
-                  <option value="">Selecciona una categoría</option>
-                  <option value="Consolas">Consolas</option>
-                  <option value="Ordenadores">Ordenadores</option>
-                  <option value="Moviles">Móviles</option>
-                  <option value="Camaras">Cámaras</option>
-                  <option value="Musica">Música</option>
-                  <option value="Relojes">Relojes</option>
-                </select>
-                <label
-  htmlFor="upload-file"
-  className="inline-flex items-center justify-center bg-gray-100 border border-gray-300 rounded-md p-2 cursor-pointer"
->
-  <img
-    src={botonCamara}
-    alt="Botón de Cámara"
-    className="w-8 h-8"
-  />
-</label>
-<input
-  type="file"
-  id="upload-file"
-  onChange={(e) => setProductImage(e.target.files[0])}
-  className="hidden"
-  required
-/>
-
-                <div className="flex justify-between items-center">
-                  <button
-                    type="submit"
-                    className="bg-green-500 text-white px-4 py-1 rounded"
-                    disabled={buyNowPrice <= minBidPrice}
-
-                  >
-                    Subir
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowProductForm(false)}
-                    className="bg-red-500 text-white px-4 py-1 rounded"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </form>
+                </form>
+              </div>
             </div>
           )}
-        </div>
+        </>
       ) : (
         <div
           className={`bg-white p-4 rounded-lg border-2 border-blue-600 transition-opacity duration-1000 ${

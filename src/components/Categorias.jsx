@@ -135,71 +135,65 @@ const Categorias = () => {
     };
 
     return (
-        <div>
-            {user && (
-                <Carousel
-                    items={[
-                        { id: 1, nombre: 'Producto 1', imagen: Carrousel1 },
-                        { id: 2, nombre: 'Producto 2', imagen: Carrousel2 },
-                        { id: 3, nombre: 'Producto 3', imagen: Carrousel3 },
-                        { id: 4, nombre: 'Producto 4', imagen: Carrousel4 }
-                    ]}
-                />
-            )}
-            <h2 className="text-2xl font-semibold mb-4 text-center mt-8 bg-gradient-to-r from-[#106571] to-[#2AB7CA] text-transparent bg-clip-text font-bold">
+        <>
+          {user ? (
+            <div>
+              <Carousel
+                items={[
+                  { id: 1, nombre: 'Producto 1', imagen: Carrousel1 },
+                  { id: 2, nombre: 'Producto 2', imagen: Carrousel2 },
+                  { id: 3, nombre: 'Producto 3', imagen: Carrousel3 },
+                  { id: 4, nombre: 'Producto 4', imagen: Carrousel4 }
+                ]}
+              />
+              <h2 className="text-2xl font-semibold mb-4 text-center mt-8 bg-gradient-to-r from-[#106571] to-[#2AB7CA] text-transparent bg-clip-text font-bold">
                 Categorías
-            </h2>
-            {user && (
-                <div className="flex flex-col items-center mt-8">
-                    {!selectedCategory ? (
-                        <>
-                            <div className="flex justify-center mb-8 w-full">
-                                {categorias.slice(0, 3).map((categoria, index) => (
-                                    <CategoriaCard key={index} categoria={categoria} onClick={handleCategoryClick} />
-                                ))}
-                            </div>
-                            <div className="flex justify-center w-full">
-                                {categorias.slice(3).map((categoria, index) => (
-                                    <CategoriaCard key={index} categoria={categoria} onClick={handleCategoryClick} />
-                                ))}
-                            </div>
-                        </>
-                    ) : (
-                        <>
-                            <div className="flex justify-center w-full flex-wrap">
-                                {products.map((producto, index) => (
-                                    <ProductCard key={index} producto={producto} />
-                                ))}
-                            </div>
-                            <button
-                                onClick={handleBackClick}
-                                className="mt-4 bg-transparent hover:bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none"
-                            >
-                                <img src={IconoAtras} alt="Volver" style={{ width: '24px', height: '24px' }} />
-                            </button>
-                        </>
-                    )}
-                </div>
-            )}
-
-            {!user && (
-                <div className="text-center mt-8">
-                    <p className="text-lg">Por favor, inicie sesión para ver las categorías.</p>
-                </div>
-            )}
-
-            {showLoginModal && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="bg-white p-8 rounded-lg">
-                        <h2 className="text-2xl font-semibold mb-4">Iniciar sesión</h2>
-                        <button onClick={handleCloseModal} className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
-                            Cerrar
-                        </button>
+              </h2>
+              <div className="flex flex-col items-center mt-8">
+                {!selectedCategory ? (
+                  <>
+                    <div className="flex justify-center mb-8 w-full">
+                      {categorias.slice(0, 3).map((categoria, index) => (
+                        <CategoriaCard key={index} categoria={categoria} onClick={handleCategoryClick} />
+                      ))}
                     </div>
+                    <div className="flex justify-center w-full">
+                      {categorias.slice(3).map((categoria, index) => (
+                        <CategoriaCard key={index} categoria={categoria} onClick={handleCategoryClick} />
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex justify-center w-full flex-wrap">
+                      {products.map((producto, index) => (
+                        <ProductCard key={index} producto={producto} />
+                      ))}
+                    </div>
+                    <button
+                      onClick={handleBackClick}
+                      className="mt-4 bg-transparent hover:bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none"
+                    >
+                      <img src={IconoAtras} alt="Volver" style={{ width: '24px', height: '24px' }} />
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : (
+            showLoginModal && (
+              <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                <div className="bg-white p-8 rounded-lg">
+                  <h2 className="text-2xl font-semibold mb-4">Iniciar sesión</h2>
+                  <button onClick={handleCloseModal} className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
+                    Cerrar
+                  </button>
                 </div>
-            )}
-        </div>
-    );
-};
-
-export default Categorias;
+              </div>
+            )
+          )}
+        </>
+      );
+    };
+    
+    export default Categorias;
