@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+
 import { auth, db, storage } from "./firebase/config";
 import {
   signInWithEmailAndPassword,
@@ -12,6 +13,7 @@ import {
   setDoc,
   getDocs,
   getDoc,
+  deleteDoc,
   addDoc,
   query,
   where,
@@ -22,6 +24,7 @@ import logoImage from "../img/logoBaeBids.png";
 import botonFotoPerfil from "../img/botonFotoPerfil.png"; // Importa la imagen del botón
 import logoSaldo from "../img/logoSaldo.png";
 import botonCamara from "../img/botonCamara.png";
+import LogoPapelera from "../img/LogoPapelera.png";
 const Header = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -41,6 +44,9 @@ const Header = () => {
   const [productImage, setProductImage] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
+  const [uploadedProducts, setUploadedProducts] = useState([]);
+  const [showUploadedProductsModal, setShowUploadedProductsModal] = useState(false);
+  const [balance, setBalance] = useState(0);
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setUser(user);
@@ -75,8 +81,29 @@ const Header = () => {
   };
 
   // Estado para almacenar el saldo del usuario
-  const [balance, setBalance] = useState(0);
 
+  const fetchUploadedProducts = useCallback(async () => {
+    if (user) {
+      const q = query(collection(db, "products"), where("username", "==", user.displayName));
+      const querySnapshot = await getDocs(q);
+      const products = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setUploadedProducts(products);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (showUploadedProductsModal) {
+      fetchUploadedProducts();
+    }
+  }, [showUploadedProductsModal, fetchUploadedProducts]);
+  useEffect(() => {
+    if (showUploadedProductsModal) {
+      fetchUploadedProducts();
+    }
+  }, [showUploadedProductsModal]);
   // UseEffect para cargar el saldo del usuario al iniciar el componente o cuando el usuario cambie
   useEffect(() => {
     const fetchBalance = async () => {
@@ -117,7 +144,8 @@ const Header = () => {
         endDate: endDate,
         category: category,
         imageUrl: imageUrl,
-        username: username // Añadir la URL de la imagen
+        username: username, 
+        sold: false
       });
 
       // Resetear los campos del formulario
@@ -246,7 +274,16 @@ const Header = () => {
       console.log(`Error al guardar el perfil: ${error.message}`);
     }
   };
-
+  const handleDeleteProduct = async (productId) => {
+    try {
+      await deleteDoc(doc(db, "products", productId));
+      // Actualizar la lista de productos después de borrar el producto
+      const updatedProducts = uploadedProducts.filter(product => product.id !== productId);
+      setUploadedProducts(updatedProducts);
+    } catch (error) {
+      console.error("Error al eliminar el producto:", error);
+    }
+  };
   return (
     <div
       className={`bg-gradient-to-r from-[#106571] to-[#2AB7CA] flex justify-center items-center transition-all duration-1000 ${
@@ -265,10 +302,11 @@ const Header = () => {
                 Subir producto
               </button>
               <button
-                className="bg-transparent text-white font-bold py-2 px-4 rounded-full focus:outline-none"
-              >
-                Productos subidos
-              </button>
+              onClick={() => setShowUploadedProductsModal(true)}
+              className="bg-transparent text-white font-bold py-2 px-4 rounded-full focus:outline-none"
+            >
+              Productos subidos
+            </button>
               <button
                 className="bg-transparent text-white font-bold py-2 px-4 rounded-full focus:outline-none"
               >
@@ -482,7 +520,39 @@ const Header = () => {
               </div>
             </div>
           )}
-        </>
+       {showUploadedProductsModal && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+    <div className="bg-gray-200 p-8 rounded-lg shadow-lg w-11/12 md:w-1/2 overflow-y-auto max-h-full">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-semibold">Productos Subidos</h2>
+        <button onClick={() => setShowUploadedProductsModal(false)} className="text-gray-600 hover:text-gray-800">
+          &times;
+        </button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {uploadedProducts.map(product => (
+          <div key={product.id} className="bg-white p-4 rounded-lg shadow-md relative">
+           <button
+  onClick={() => handleDeleteProduct(product.id)}
+  className="absolute top-0 right-0 m-2 p-1 bg-red-500 text-white rounded-full text-xs font-bold flex items-center justify-center"
+>
+  <img src={LogoPapelera} alt="Eliminar" className="w-4 h-4" />
+</button>
+            <img src={product.imageUrl} alt={product.name} className="w-full h-48 object-cover rounded-md" />
+            <h3 className="mt-2 text-lg font-semibold">{product.name}</h3>
+            <p className="mt-1 text-gray-600">{product.description}</p>
+            <p className="mt-1 text-gray-800 font-bold">Min Bid: {product.minBidPrice} EUR</p>
+            <p className="mt-1 text-gray-800 font-bold">Buy Now: {product.buyNowPrice} EUR</p>
+            <p className="mt-1 text-gray-800">End Date: {product.endDate}</p>
+            <p className="mt-1 text-gray-800">Category: {product.category}</p>
+            <p className="mt-1 text-gray-800 font-bold">Vendido: <span className={`text-${product.sold ? 'green' : 'red'}-500`}>{product.sold ? 'Sí' : 'No'}</span></p>
+          </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </>
       ) : (
         <div
           className={`bg-white p-4 rounded-lg border-2 border-blue-600 transition-opacity duration-1000 ${

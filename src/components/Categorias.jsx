@@ -100,17 +100,20 @@ const Categorias = () => {
     }, []);
 
     useEffect(() => {
-        if (selectedCategory) {
-            const fetchProducts = async () => {
-                const q = query(collection(db, 'products'), where('category', '==', selectedCategory));
-                const querySnapshot = await getDocs(q);
-                const productsArray = querySnapshot.docs.map(doc => doc.data());
-                setProducts(productsArray);
-            };
-
-            fetchProducts();
-        }
-    }, [selectedCategory]);
+      if (selectedCategory) {
+          const fetchProducts = async () => {
+              const q = query(collection(db, 'products'), 
+                  where('category', '==', selectedCategory), // Filtrar por categoría
+                  where('sold', '==', false) // Filtrar por sold == false
+              );
+              const querySnapshot = await getDocs(q);
+              const productsArray = querySnapshot.docs.map(doc => doc.data());
+              setProducts(productsArray);
+          };
+  
+          fetchProducts();
+      }
+  }, [selectedCategory]);
 
     const handleCloseModal = () => {
         setShowLoginModal(false);
