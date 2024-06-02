@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from "react";
-
 import { auth, db, storage } from "./firebase/config";
 import {
   signInWithEmailAndPassword,
@@ -8,15 +7,7 @@ import {
   signOut,
 } from "firebase/auth";
 import {
-  collection,
-  doc,
-  setDoc,
-  getDocs,
-  getDoc,
-  deleteDoc,
-  addDoc,
-  query,
-  where,
+  collection, doc, setDoc, getDocs, getDoc, deleteDoc, addDoc, query, where
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import perfilImage from "../img/perfil.png";
@@ -25,10 +16,12 @@ import botonFotoPerfil from "../img/botonFotoPerfil.png"; // Importa la imagen d
 import logoSaldo from "../img/logoSaldo.png";
 import botonCamara from "../img/botonCamara.png";
 import LogoPapelera from "../img/LogoPapelera.png";
+
 const Header = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
+  const [owner, setOwner] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [opacity, setOpacity] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
@@ -37,6 +30,7 @@ const Header = () => {
   const [productName, setProductName] = useState("");
   const [productDescription, setProductDescription] = useState("");
   const [minBidPrice, setMinBidPrice] = useState("");
+  const [actualBidPrice, setActualBidPrice] = useState("");
   const [buyNowPrice, setBuyNowPrice] = useState("");
   const [endDate, setEndDate] = useState("");
   const [category, setCategory] = useState("");
@@ -47,6 +41,7 @@ const Header = () => {
   const [uploadedProducts, setUploadedProducts] = useState([]);
   const [showUploadedProductsModal, setShowUploadedProductsModal] = useState(false);
   const [balance, setBalance] = useState(0);
+
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setUser(user);
@@ -64,6 +59,7 @@ const Header = () => {
       setTimeout(() => setOpacity(1), 100); // Fade in the form after the user area fades out
     }
   }, [user]);
+
   const getBalance = async () => {
     try {
       const userDocRef = doc(db, "users", user.uid);
@@ -79,8 +75,6 @@ const Header = () => {
       return 0; // Retorna 0 si hay un error o el documento de usuario no existe
     }
   };
-
-  // Estado para almacenar el saldo del usuario
 
   const fetchUploadedProducts = useCallback(async () => {
     if (user) {
@@ -99,26 +93,19 @@ const Header = () => {
       fetchUploadedProducts();
     }
   }, [showUploadedProductsModal, fetchUploadedProducts]);
-  useEffect(() => {
-    if (showUploadedProductsModal) {
-      fetchUploadedProducts();
-    }
-  }, [showUploadedProductsModal]);
-  // UseEffect para cargar el saldo del usuario al iniciar el componente o cuando el usuario cambie
+
   useEffect(() => {
     const fetchBalance = async () => {
       const userBalance = await getBalance();
       setBalance(userBalance);
     };
     fetchBalance();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const isValidUsername = (username) => {
-    // Check if the username only contains letters and numbers and is not more than 16 characters long
     const MIN_LENGTH = 3;
     const MAX_LENGTH = 20;
-    const validCharacters = /^[a-zA-Z0-9_]+$/; // Permitir letras, números y guiones bajos
+    const validCharacters = /^[a-zA-Z0-9_]+$/;
 
     return (
       username.length >= MIN_LENGTH &&
@@ -126,38 +113,61 @@ const Header = () => {
       validCharacters.test(username)
     );
   };
+
+  const getUsernameFromUID = async (uid) => {
+    const usersCollection = collection(db, "users");
+    const q = query(usersCollection, where("uid", "==", uid));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      const userDoc = querySnapshot.docs[0];
+      return userDoc.data().username;
+    } else {
+      throw new Error("No user found with the given UID.");
+    }
+  };
+
   const handleProductSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      // Subir la imagen a Firebase Storage
       const storageRef = ref(storage, `productImages/${productImage.name}`);
       await uploadBytes(storageRef, productImage);
       const imageUrl = await getDownloadURL(storageRef);
 
-      // Añadir el producto a Firestore con la URL de la imagen
-      await addDoc(collection(db, "products"), {
-        name: productName,
-        description: productDescription,
-        minBidPrice: minBidPrice,
-        buyNowPrice: buyNowPrice,
-        endDate: endDate,
-        category: category,
-        imageUrl: imageUrl,
-        username: username, 
-        sold: false
-      });
+      if (user) {
+        const uid = user.uid;
+        const fetchedUsername = await getUsernameFromUID(uid);
 
-      // Resetear los campos del formulario
-      setProductName("");
-      setProductDescription("");
-      setMinBidPrice(0);
-      setBuyNowPrice(0);
-      setEndDate("");
-      setCategory("");
-      setProductImage(null); // Resetear el campo de imagen
+        await addDoc(collection(db, "products"), {
+          name: productName,
+          description: productDescription,
+          minBidPrice: minBidPrice,
+          buyNowPrice: buyNowPrice,
+          endDate: endDate,
+          category: category,
+          imageUrl: imageUrl,
+          username: fetchedUsername,
+          sold: false,
+          actualBidPrice: minBidPrice,
+          owner: fetchedUsername,
+        });
 
-      console.log("Producto agregado exitosamente");
+        setProductName("");
+        setProductDescription("");
+        setMinBidPrice(0);
+        setBuyNowPrice(0);
+        setEndDate("");
+        setCategory("");
+        setProductImage(null); 
+        setActualBidPrice(0);
+        setUsername("");
+        setOwner("");
+
+        console.log("Producto agregado exitosamente");
+      } else {
+        console.log("No user is logged in.");
+      }
     } catch (error) {
       console.error("Error al agregar el producto:", error.message);
     }
@@ -541,10 +551,11 @@ const Header = () => {
             <img src={product.imageUrl} alt={product.name} className="w-full h-48 object-cover rounded-md" />
             <h3 className="mt-2 text-lg font-semibold">{product.name}</h3>
             <p className="mt-1 text-gray-600">{product.description}</p>
-            <p className="mt-1 text-gray-800 font-bold">Min Bid: {product.minBidPrice} EUR</p>
-            <p className="mt-1 text-gray-800 font-bold">Buy Now: {product.buyNowPrice} EUR</p>
-            <p className="mt-1 text-gray-800">End Date: {product.endDate}</p>
-            <p className="mt-1 text-gray-800">Category: {product.category}</p>
+            <p className="mt-1 text-gray-800 font-bold">Puja mín: {product.minBidPrice} EUR</p>
+            <p className="mt-1 text-gray-800 font-bold">Puja actual: {product.actualBidPrice} EUR</p>
+            <p className="mt-1 text-gray-800 font-bold">Compra ya: {product.buyNowPrice} EUR</p>
+            <p className="mt-1 text-gray-800">Fecha fin.: {product.endDate}</p>
+            <p className="mt-1 text-gray-800">Categoria: {product.category}</p>
             <p className="mt-1 text-gray-800 font-bold">Vendido: <span className={`text-${product.sold ? 'green' : 'red'}-500`}>{product.sold ? 'Sí' : 'No'}</span></p>
           </div>
                 ))}
