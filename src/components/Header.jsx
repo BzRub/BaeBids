@@ -41,6 +41,9 @@ const Header = () => {
   const [uploadedProducts, setUploadedProducts] = useState([]);
   const [showUploadedProductsModal, setShowUploadedProductsModal] = useState(false);
   const [balance, setBalance] = useState(0);
+  const [bidError, setBidError] = useState(""); // Estado para manejar el mensaje de error
+  const [ownedProducts, setOwnedProducts] = useState([]);
+  const [showOwnedProductsModal, setShowOwnedProductsModal] = useState(false);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -78,7 +81,7 @@ const Header = () => {
 
   const fetchUploadedProducts = useCallback(async () => {
     if (user) {
-      const q = query(collection(db, "products"), where("username", "==", user.displayName));
+      const q = query(collection(db, "products"), where("username", "==", user.displayName), where ("sold", "==", false));
       const querySnapshot = await getDocs(q);
       const products = querySnapshot.docs.map(doc => ({
         id: doc.id,
@@ -93,6 +96,27 @@ const Header = () => {
       fetchUploadedProducts();
     }
   }, [showUploadedProductsModal, fetchUploadedProducts]);
+
+
+  const fetchOwnedProducts = useCallback(async () => {
+    if (user) {
+      const q = query(collection(db, "products"), where("owner", "==", user.displayName), where ("sold", "==", true));
+      const querySnapshot = await getDocs(q);
+      const products = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setOwnedProducts(products);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (showOwnedProductsModal) {
+      fetchOwnedProducts();
+    }
+  }, [showOwnedProductsModal, fetchOwnedProducts]);
+
+
 
   useEffect(() => {
     const fetchBalance = async () => {
@@ -173,6 +197,7 @@ const Header = () => {
     }
   };
   const handleRegister = async () => {
+
     if (!isValidUsername(username)) {
       setErrorMessage(
         "Username should only contain letters and numbers, and be no longer than 16 characters."
@@ -217,7 +242,7 @@ const Header = () => {
       console.log("Usuario creado con éxito");
     } catch (error) {
       console.error(error); // Aquí se muestra el error por consola
-      setErrorMessage("User aleady exist or invalid password");
+      setErrorMessage("User aleady exist or short password");
     }
   };
   const isUsernameTaken = (username) => {
@@ -294,6 +319,7 @@ const Header = () => {
       console.error("Error al eliminar el producto:", error);
     }
   };
+  
   return (
     <div
       className={`bg-gradient-to-r from-[#106571] to-[#2AB7CA] flex justify-center items-center transition-all duration-1000 ${
@@ -318,6 +344,7 @@ const Header = () => {
               Productos subidos
             </button>
               <button
+              onClick={() => setShowOwnedProductsModal(true)}
                 className="bg-transparent text-white font-bold py-2 px-4 rounded-full focus:outline-none"
               >
                 Productos adquiridos
@@ -557,6 +584,28 @@ const Header = () => {
             <p className="mt-1 text-gray-800">Fecha fin.: {product.endDate}</p>
             <p className="mt-1 text-gray-800">Categoria: {product.category}</p>
             <p className="mt-1 text-gray-800 font-bold">Vendido: <span className={`text-${product.sold ? 'green' : 'red'}-500`}>{product.sold ? 'Sí' : 'No'}</span></p>
+          </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+        {showOwnedProductsModal && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+    <div className="bg-gray-200 p-8 rounded-lg shadow-lg w-11/12 md:w-1/2 overflow-y-auto max-h-full">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-semibold">Productos Adquiridos</h2>
+        <button onClick={() => setShowOwnedProductsModal(false)} className="text-gray-600 hover:text-gray-800">
+          &times;
+        </button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {ownedProducts.map(product => (
+          <div key={product.id} className="bg-white p-4 rounded-lg shadow-md relative">
+ 
+            <img src={product.imageUrl} alt={product.name} className="w-full h-48 object-cover rounded-md" />
+            <h3 className="mt-2 text-lg font-semibold">{product.name}</h3>
+            <p className="mt-1 text-gray-600">{product.description}</p>
           </div>
                 ))}
               </div>
