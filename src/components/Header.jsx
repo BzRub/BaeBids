@@ -22,6 +22,7 @@ const Header = () => {
   const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
   const [owner, setOwner] = useState("");
+  const [highestBidder, setHighestBidder] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [opacity, setOpacity] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
@@ -152,6 +153,7 @@ const Header = () => {
   };
 
   const handleProductSubmit = async (e) => {
+    
     e.preventDefault();
 
     try {
@@ -175,6 +177,7 @@ const Header = () => {
           sold: false,
           actualBidPrice: minBidPrice,
           owner: fetchedUsername,
+          highestBidder: ""
         });
 
         setProductName("");
@@ -187,20 +190,21 @@ const Header = () => {
         setActualBidPrice(0);
         setUsername("");
         setOwner("");
+        setHighestBidder("")
 
-        console.log("Producto agregado exitosamente");
+        alert("Producto agregado exitosamente");
       } else {
-        console.log("No user is logged in.");
+        alert("No user is logged in.");
       }
     } catch (error) {
-      console.error("Error al agregar el producto:", error.message);
+      alert("Error al agregar el producto: " + error.message);
     }
   };
   const handleRegister = async () => {
 
     if (!isValidUsername(username)) {
       setErrorMessage(
-        "Username should only contain letters and numbers, and be no longer than 16 characters."
+        "Username only contain letters and numbers, no longer than 16 characters and not shorter than 3."
       );
       return;
     }
@@ -246,6 +250,7 @@ const Header = () => {
     }
   };
   const isUsernameTaken = (username) => {
+
     // Verifica si el nombre de usuario ya está en uso por otra persona
     // Retorna true si el nombre de usuario está en uso, de lo contrario, false
     // Por ejemplo, podrías realizar una consulta a tu base de datos para verificar si el nombre de usuario ya existe

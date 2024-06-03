@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, getDocs, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, getDoc, writeBatch  } from 'firebase/firestore';
 import { auth, db } from './firebase/config';
 import logoConsolas from "../img/LogoConsolas.png";
 import logoOrdenadores from "../img/LogoOrdenadores.png";
@@ -58,7 +58,6 @@ const Categorias = () => {
       </div>
     );
   };
-
   const CategoriaCard = ({ categoria, onClick }) => {
     const logo = logos[categoria.nombre];
 
@@ -72,7 +71,20 @@ const Categorias = () => {
 
   const ProductCard = ({ producto, onBidClick, onBuyNowClick }) => {
     const [isHovered, setIsHovered] = useState(false);
-
+  
+    const formatTimeRemaining = (timeRemaining) => {
+      if (timeRemaining <= 0) {
+        return "Subasta Finalizada";
+      }
+      const minutes = Math.floor((timeRemaining / (1000 * 60)) % 60);
+      const hours = Math.floor((timeRemaining / (1000 * 60 * 60)) % 24);
+      const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+  
+      return `${days} días, ${hours} horas, ${minutes} minutos`;
+    };
+  
+    const timeExpired = producto.timeRemaining <= 0;
+  
     return (
       <div
         className={`relative w-1/4 p-4 rounded-lg shadow-md text-center mx-2 mb-4 ${isHovered ? 'bg-gray-200' : 'bg-gray-100'}`}
@@ -86,7 +98,8 @@ const Categorias = () => {
         <p className="text-gray-900 font-semibold">Pujar por {producto.minBidPrice} €</p>
         <p className="mt-1 text-gray-800 font-bold">Actual bid: {producto.actualBidPrice} EUR</p>
         <p className="text-gray-900">por {producto.username}</p>
-        {isHovered && (
+        <p className={`font-bold ${timeExpired ? 'text-red-500' : 'text-gray-900'}`}>{formatTimeRemaining(producto.timeRemaining)}</p>
+        {!timeExpired && isHovered && (
           <div className="mt-4 flex flex-col items-center">
             <button
               className="bg-blue-500 text-white font-bold py-2 px-4 rounded my-1 hover:bg-blue-700"
@@ -204,18 +217,37 @@ const Categorias = () => {
       if (selectedCategory) {
         const q = query(
           collection(db, 'products'),
-          where('sold', '==', false) , // Añadir esta línea
+          where('sold', '==', false),
           where('category', '==', selectedCategory)
         );
         const querySnapshot = await getDocs(q);
-        const productos = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const productos = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          const [day, month, year] = data.endDate.split('/');
+          const endDate = new Date(`${year}-${month}-${day}`);
+          const timeRemaining = endDate - new Date();
+          return { id: doc.id, timeRemaining, ...data };
+        });
         setProducts(productos);
       }
     };
   
     fetchProducts();
-  }, [selectedCategory]);
-
+  }, [selectedCategory])
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setProducts(prevProducts =>
+        prevProducts.map(product => {
+          const [day, month, year] = product.endDate.split('/');
+          const endDate = new Date(`${year}-${month}-${day}`);
+          const timeRemaining = endDate - new Date();
+          return { ...product, timeRemaining };
+        })
+      );
+    }, 60000); // Actualiza cada minuto (60000ms)
+  
+    return () => clearInterval(intervalId);
+  }, [products]);
   useEffect(() => {
     const fetchUserBalance = async (userId) => {
       const userDocRef = doc(db, 'users', userId);
@@ -275,30 +307,78 @@ const Categorias = () => {
         alert('La puja no puede ser mayor que el precio de compra.');
         return;
       }
-
-      // Actualizar el precio de la oferta actual en el producto
+  
+      // Crear una instancia de batch
+      const batch = writeBatch(db);
+  
+      // Referencias de documentos
       const productDocRef = doc(db, 'products', selectedProduct.id);
-      await updateDoc(productDocRef, {
+      const userDocRef = doc(db, 'users', user.uid);
+  
+      // Actualizar el precio de la oferta actual y el highestBidder en el producto
+      batch.update(productDocRef, {
         actualBidPrice: bidAmount,
+        highestBidder: user.displayName, // Añade esta línea para actualizar el campo highestBidder
         username: user.displayName // Asumimos que el nombre de usuario está en el objeto `user`
       });
-
+  
       // Restar el saldo pujado del saldo del usuario
-      const userDocRef = doc(db, 'users', user.uid);
       const newBalance = userBalance - bidAmount;
-      await updateDoc(userDocRef, {
+      batch.update(userDocRef, {
         saldo: newBalance
       });
-
+  
+      // Ejecutar el batch
+      await batch.commit();
+  
       // Actualizar el estado del saldo del usuario
       setUserBalance(newBalance);
-
+  
       setShowBidModal(false);
     } catch (error) {
       console.error("Error updating document: ", error);
     }
   };
-
+  const checkAndCompleteAuctions = async () => {
+    const q = query(
+      collection(db, 'products'),
+      where('sold', '==', false)
+    );
+    const querySnapshot = await getDocs(q);
+    const batch = writeBatch(db); // Utilizamos writeBatch en lugar de db.batch
+  
+    querySnapshot.forEach((docSnapshot) => {
+      const data = docSnapshot.data();
+      const [day, month, year] = data.endDate.split('/');
+      const endDate = new Date(`${year}-${month}-${day}`);
+      const timeRemaining = endDate - new Date();
+  
+      if (timeRemaining <= 0 && data.highestBidder) {
+        const productDocRef = doc(db, 'products', docSnapshot.id);
+        batch.update(productDocRef, {
+          owner: data.highestBidder,
+          sold: true // Asegúrate de que esta línea esté presente
+        });
+      }
+    });
+  
+    await batch.commit();
+  };
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      checkAndCompleteAuctions();
+      setProducts(prevProducts =>
+        prevProducts.map(product => {
+          const [day, month, year] = product.endDate.split('/');
+          const endDate = new Date(`${year}-${month}-${day}`);
+          const timeRemaining = endDate - new Date();
+          return { ...product, timeRemaining };
+        })
+      );
+    }, 10000); 
+  
+    return () => clearInterval(intervalId);
+  }, []);
   const handleBuyNowSubmit = async (buyNowPrice) => {
     try {
       // Restar el saldo del usuario
