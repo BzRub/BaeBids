@@ -97,6 +97,7 @@ const Header = () => {
       fetchUploadedProducts();
     }
   }, [showUploadedProductsModal, fetchUploadedProducts]);
+  
 
   const fetchOwnedProducts = useCallback(async () => {
     if (user) {
@@ -125,6 +126,7 @@ const Header = () => {
   }, [user]);
 
   const isValidUsername = (username) => {
+    
     const MIN_LENGTH = 3;
     const MAX_LENGTH = 20;
     const validCharacters = /^[a-zA-Z0-9_]+$/;
@@ -150,6 +152,7 @@ const Header = () => {
   };
 
   const handleProductSubmit = async (e) => {
+    
     
     e.preventDefault();
 
@@ -198,6 +201,7 @@ const Header = () => {
     }
   };
   const handleRegister = async () => {
+
 
     if (!isValidUsername(username)) {
       setErrorMessage(
@@ -248,6 +252,7 @@ const Header = () => {
   };
   const isUsernameTaken = (username) => {
 
+
     // Verifica si el nombre de usuario ya está en uso por otra persona
     // Retorna true si el nombre de usuario está en uso, de lo contrario, false
     // Por ejemplo, podrías realizar una consulta a tu base de datos para verificar si el nombre de usuario ya existe
@@ -296,6 +301,7 @@ const Header = () => {
   };
 
   const handleSaveProfile = async () => {
+
     try {
       // Actualizar el nombre de usuario en la base de datos
       const userDocRef = doc(db, "users", user.uid);

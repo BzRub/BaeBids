@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, getDocs, doc, updateDoc, getDoc, writeBatch  } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, getDoc, writeBatch, onSnapshot  } from 'firebase/firestore';
 import { auth, db } from './firebase/config';
 import logoConsolas from "../img/LogoConsolas.png";
 import logoOrdenadores from "../img/LogoOrdenadores.png";
@@ -234,7 +235,27 @@ const Categorias = () => {
     };
   
     fetchProducts();
-  }, [selectedCategory])
+  
+    // Suscripción a cambios en tiempo real
+    const unsubscribe = onSnapshot(query(collection(db, 'products')), (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'modified') {
+          const updatedProduct = change.doc.data();
+          setProducts((prevProducts) => {
+            return prevProducts.map((product) => {
+              if (product.id === change.doc.id) {
+                return { ...product, actualBidPrice: updatedProduct.actualBidPrice, highestBidder: updatedProduct.highestBidder };
+              }
+              return product;
+            });
+          });
+        }
+      });
+    });
+  
+    // Devuelve una función de limpieza para limpiar la suscripción cuando el componente se desmonta
+    return () => unsubscribe();
+  }, [selectedCategory]);
   useEffect(() => {
     const intervalId = setInterval(() => {
       setProducts(prevProducts =>
