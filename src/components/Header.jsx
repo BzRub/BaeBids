@@ -12,7 +12,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import perfilImage from "../img/perfil.png";
 import logoImage from "../img/logoBaeBids.png";
-import botonFotoPerfil from "../img/botonFotoPerfil.png"; // Importa la imagen del botón
+import botonFotoPerfil from "../img/botonFotoPerfil.png"; 
 import logoSaldo from "../img/logoSaldo.png";
 import botonCamara from "../img/botonCamara.png";
 import LogoPapelera from "../img/LogoPapelera.png";
@@ -26,8 +26,8 @@ const Header = () => {
   const [showForm, setShowForm] = useState(false);
   const [opacity, setOpacity] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
-  const [editMode, setEditMode] = useState(false); // Estado para el modo de edición
-  const [newUsername, setNewUsername] = useState(""); // Nuevo nombre de usuario
+  const [editMode, setEditMode] = useState(false); 
+  const [newUsername, setNewUsername] = useState(""); 
   const [productName, setProductName] = useState("");
   const [productDescription, setProductDescription] = useState("");
   const [minBidPrice, setMinBidPrice] = useState("");
@@ -35,14 +35,14 @@ const Header = () => {
   const [buyNowPrice, setBuyNowPrice] = useState("");
   const [endDate, setEndDate] = useState("");
   const [category, setCategory] = useState("");
-  const [minDate] = useState(new Date()); // Define minDate as a state variable
+  const [minDate] = useState(new Date()); 
   const [productImage, setProductImage] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
   const [uploadedProducts, setUploadedProducts] = useState([]);
   const [showUploadedProductsModal, setShowUploadedProductsModal] = useState(false);
   const [balance, setBalance] = useState(0);
-  const [bidError, setBidError] = useState(""); // Estado para manejar el mensaje de error
+  const [bidError, setBidError] = useState(""); 
   const [ownedProducts, setOwnedProducts] = useState([]);
   const [showOwnedProductsModal, setShowOwnedProductsModal] = useState(false);
 
@@ -98,7 +98,6 @@ const Header = () => {
     }
   }, [showUploadedProductsModal, fetchUploadedProducts]);
 
-
   const fetchOwnedProducts = useCallback(async () => {
     if (user) {
       const q = query(collection(db, "products"), where("owner", "==", user.displayName), where ("sold", "==", true));
@@ -116,8 +115,6 @@ const Header = () => {
       fetchOwnedProducts();
     }
   }, [showOwnedProductsModal, fetchOwnedProducts]);
-
-
 
   useEffect(() => {
     const fetchBalance = async () => {

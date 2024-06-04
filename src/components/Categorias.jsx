@@ -97,7 +97,8 @@ const Categorias = () => {
         <p className="text-gray-900 font-semibold">Comprar por {producto.buyNowPrice} €</p>
         <p className="text-gray-900 font-semibold">Pujar por {producto.minBidPrice} €</p>
         <p className="mt-1 text-gray-800 font-bold">Actual bid: {producto.actualBidPrice} EUR</p>
-        <p className="text-gray-900">por {producto.username}</p>
+        <p className="text-gray-900">Subido por {producto.username}</p>
+        <p className="text-gray-900">Ultima puja: {producto.highestBidder}</p>
         <p className={`font-bold ${timeExpired ? 'text-red-500' : 'text-gray-900'}`}>{formatTimeRemaining(producto.timeRemaining)}</p>
         {!timeExpired && isHovered && (
           <div className="mt-4 flex flex-col items-center">
@@ -319,7 +320,6 @@ const Categorias = () => {
       batch.update(productDocRef, {
         actualBidPrice: bidAmount,
         highestBidder: user.displayName, // Añade esta línea para actualizar el campo highestBidder
-        username: user.displayName // Asumimos que el nombre de usuario está en el objeto `user`
       });
   
       // Restar el saldo pujado del saldo del usuario
